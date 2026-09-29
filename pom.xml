@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>dev.jason.dkv</groupId>
+  <artifactId>dkv-parent</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>dkv</name>
+  <description>A replicated, linearizable key-value store: single node, then Apache Ratis, then a custom Raft.</description>
+
+  <modules>
+    <module>kv-core</module>
+    <module>kv-server</module>
+    <module>consensus-api</module>
+    <module>consensus-ratis</module>
+    <module>raft</module>
+    <module>checker</module>
+    <module>acceptance</module>
+  </modules>
+
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+    <junit.version>5.14.4</junit.version>
+    <ratis.version>3.2.2</ratis.version>
+
+    <!-- The Ratis ban applies to every module unless it opts out by setting this to true.
+         Only consensus-ratis (and acceptance, which launches whole clusters) opt out. -->
+    <dkv.allowRatis>false</dkv.allowRatis>
+
+    <!-- Acceptance-test selection: -Dstage=N runs stages 0..N; -Dseed=S replays a randomized run. -->
+    <stage>0</stage>
+    <seed></seed>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.junit</groupId>
+        <artifactId>junit-bom</artifactId>
+        <version>${junit.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.ratis</groupId>
+        <artifactId>ratis-server</artifactId>
+        <version>${ratis.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.ratis</groupId>
+        <artifactId>ratis-grpc</artifactId>
+        <version>${ratis.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>dev.jason.dkv</groupId>
+        <artifactId>kv-core</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>dev.jason.dkv</groupId>
+        <artifactId>kv-server</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>dev.jason.dkv</groupId>
+        <artifactId>consensus-api</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>dev.jason.dkv</groupId>
+        <artifactId>consensus-ratis</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>dev.jason.dkv</groupId>
+        <artifactId>raft</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>dev.jason.dkv</groupId>
+        <artifactId>checker</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <!-- Every module gets JUnit for its own unit tests (Surefire). -->
+  <dependencies>
+    <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.14.1</version>
+          <configuration>
+            <compilerArgs>
+              <arg>-Xlint:all</arg>
+            </compilerArgs>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.5.6</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-failsafe-plugin</artifactId>
+          <version>3.5.6</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.4.2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-enforcer-plugin</artifactId>
+          <version>3.6.2</version>
+        </plugin>
+        <plugin>
+          <groupId>com.diffplug.spotless</groupId>
+          <artifactId>spotless-maven-plugin</artifactId>
+          <version>3.10.3</version>
+          <configuration>
+            <java>
+              <googleJavaFormat>
+                <version>1.36.1</version>
+              </googleJavaFormat>
+              <removeUnusedImports/>
+            </java>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>toolchain</id>
+            <goals><goal>enforce</goal></goals>
+            <configuration>
+              <rules>
+                <requireJavaVersion>
+                  <version>[21,)</version>
+                </requireJavaVersion>
+                <requireMavenVersion>
+                  <version>[3.9,)</version>
+                </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+          <execution>
+            <!-- The consensus boundary is checked by the build, not by discipline.
+                 searchTransitive (the default) means a Ratis jar pulled in through
+                 another dependency is caught too. -->
+            <id>ban-ratis</id>
+            <goals><goal>enforce</goal></goals>
+            <configuration>
+              <skip>${dkv.allowRatis}</skip>
+              <rules>
+                <bannedDependencies>
+                  <excludes>
+                    <exclude>org.apache.ratis</exclude>
+                  </excludes>
+                  <message>Apache Ratis may only be used inside consensus-ratis. Everything else talks to consensus through consensus-api.</message>
+                </bannedDependencies>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>com.diffplug.spotless</groupId>
+        <artifactId>spotless-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>

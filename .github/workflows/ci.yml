@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # Runs acceptance stages 0..N, where N is the current stage in .mentor/progress.md.
+      - name: Select stage
+        id: stage
+        run: |
+          stage=$(sed -n 's/^Current stage: *\([0-9][0-9]*\).*/\1/p' .mentor/progress.md | head -1)
+          echo "stage=${stage:-0}" >> "$GITHUB_OUTPUT"
+          echo "Running acceptance stages 0..${stage:-0}"
+
+      - name: Format check
+        run: ./mvnw -B -ntp spotless:check
+
+      - name: Verify
+        run: ./mvnw -B -ntp verify -Dstage=${{ steps.stage.outputs.stage }}
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports
+          path: |
+            **/target/surefire-reports/
+            **/target/failsafe-reports/
