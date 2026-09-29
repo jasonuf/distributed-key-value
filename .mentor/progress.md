@@ -5,7 +5,7 @@ Status: in progress   <!-- not started | in progress | design gate | checking | 
 
 ## Stage 0 checklist
 - [x] Scaffolding given by mentor: parent + 7 module POMs, Maven Wrapper (Maven 3.9.16), Ratis ban via Enforcer, `@Stage`/`@Seeded` harness, CI workflow, Spotless (google-java-format)
-- [ ] `./mvnw verify -Dstage=0` passes locally
+- [x] `./mvnw verify -Dstage=0` passes locally (verified 2026-09-29: 3 run, 1 skipped as intended)
 - [ ] Experiment: add a Ratis dependency to `kv-core`, see the build fail, revert
 - [ ] Experiment: add a deliberately failing `@Stage(0)` test, see it reported, remove it
 - [ ] Repo pushed to GitHub; CI green
