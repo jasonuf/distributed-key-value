@@ -34,7 +34,7 @@
         </executions>
         <configuration>
           <!-- Without these, -Dstage and -Dseed never reach the test JVM and stage selection
-               silently does nothing. StageSelectionIT guards against that. -->
+               silently does nothing. Stage00WorkbenchIT guards against that. -->
           <systemPropertyVariables>
             <stage>${stage}</stage>
             <seed>${seed}</seed>

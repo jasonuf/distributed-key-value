@@ -1,0 +1,2 @@
+- mvn verify will go execute a series of build steps. Each build step has a default executor also added to by an additional plugin execution logic. In this project, some plugins are Surefire, Enforcer, and a ratis-ban on certain modules. This will enfore certain rules like the ratis import and tests passing
+- The .github directory includes a github workflow which will detect the stage from some part of the repo, and run some tests, one by running a mvn verify cli command. And report to Github if any tests fail.
