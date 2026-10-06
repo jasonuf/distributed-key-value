@@ -5,9 +5,7 @@ import static dev.jason.dkv.server.HandlerUtil.stripEnds;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import dev.jason.dkv.Command;
-import dev.jason.dkv.KeyValueCore;
-import dev.jason.dkv.Response;
+import dev.jason.dkv.*;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
@@ -21,40 +19,50 @@ public class KeyValueHandler implements HttpHandler {
     kvCore = new KeyValueCore();
   }
 
-  private synchronized void handleGet(HttpExchange ex, String key) throws IOException {
-    Command cmd = new Command(Command.CommandType.GET, new String[] {key});
+  private void handleGet(HttpExchange ex, String key) throws IOException {
+    GetCommand cmd = new GetCommand(key);
 
     Response res = kvCore.apply(cmd);
-
-    if (res.value() == null) {
-      send(ex, 404, "Key not found in key-value store, key=" + key);
-    } else {
-      send(ex, 200, res.value());
-    }
+    handleApplyResponse(res, ex);
   }
 
-  private synchronized void handlePut(HttpExchange ex, String key, String value)
-      throws IOException {
+  private void handlePut(HttpExchange ex, String key, String value) throws IOException {
 
-    Command cmd = new Command(Command.CommandType.PUT, new String[] {key, value});
+    Command cmd = new PutCommand(key, value);
     Response res = kvCore.apply(cmd);
-
-    if (res.previousState().equals("missing")) {
-      send(ex, 201, "");
-    } else {
-      send(ex, 204, "");
-    }
+    handleApplyResponse(res, ex);
   }
 
-  private synchronized void handleDelete(HttpExchange ex, String key) throws IOException {
+  private void handleDelete(HttpExchange ex, String key) throws IOException {
 
-    Command cmd = new Command(Command.CommandType.DELETE, new String[] {key});
+    Command cmd = new DeleteCommand(key);
     Response res = kvCore.apply(cmd);
+    handleApplyResponse(res, ex);
+  }
 
-    if (res.previousState().equals("present")) {
-      send(ex, 204, "");
-    } else {
-      send(ex, 404, "Key not in key-value store, key=" + key);
+  private void handleApplyResponse(Response response, HttpExchange ex) throws IOException {
+    switch (response) {
+      case GetResponse res -> {
+        if (!res.present()) {
+          send(ex, 404, "Key not found in key-value store");
+        } else {
+          send(ex, 200, res.value());
+        }
+      }
+      case PutResponse res -> {
+        if (!res.present()) {
+          send(ex, 201, "");
+        } else {
+          send(ex, 204, "");
+        }
+      }
+      case DeleteResponse res -> {
+        if (res.present()) {
+          send(ex, 204, "");
+        } else {
+          send(ex, 404, "Key not in key-value store");
+        }
+      }
     }
   }
 

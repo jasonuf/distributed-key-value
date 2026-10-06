@@ -1,15 +1,15 @@
 # dkv progress
 
 Current stage: 1
-Status: in progress   <!-- not started | in progress | design gate | checking | complete -->
+Status: checking   <!-- not started | in progress | design gate | checking | complete -->
 
 ## Stage 1 checklist
 - [x] Given by mentor: HTTP spec (`docs/http-api.md`), node launcher (`NodeProcess`, `KvClient`), acceptance tests (`Stage01CrudIT`, `Stage01ConcurrencyIT`, `Stage01DeterminismIT`)
 - 2026-10-05 mentor test fix: added `Stage01CrudIT.differentEncodingsOfTheSameKeyNameTheSameKey`; the original suite didn't check that keys are percent-decoded, as the spec requires
 - [ ] Reading: Raft paper §2; Schneider (1990) §1–3
 - [x] `dev.jason.dkv.server.Main` starts and serves `/kv/{key}` per the spec
-- [ ] `./mvnw verify -Dstage=1` passes locally and in CI (local: 21 run, 0 failed on 2026-10-05; CI pending, needs `spotless:apply`)
-- [ ] Guardrail review (commands as data, deterministic apply, submit-and-wait, reads expressible as commands). 2026-10-05 first pass: not yet met; state lives in the HTTP handler, no commands or `apply` in `kv-core`
+- [ ] `./mvnw verify -Dstage=1` passes locally and in CI (local: 22 run, 0 failed, spotless clean on 2026-10-05; CI after next push)
+- [x] Guardrail review (2026-10-05): sealed `Command`/`Response` records, single private-dispatch `apply` in `kv-core`, one lock around state with no lock held over network I/O, reads expressed as commands
 - [ ] Grill
 
 ## Completed stages
@@ -19,6 +19,7 @@ Status: in progress   <!-- not started | in progress | design gate | checking | 
 ## Hints used
 <!-- stage | topic | tier -->
 - 1 | Separating commands and `apply` (kv-core) from HTTP handling (kv-server) | 1
+- 1 | Handling a sealed result type in the HTTP layer without bypassing `apply` (Java pattern-matching `switch`, explained with a non-domain example) | 3
 
 ## Decisions
 <!-- date | decision | reason | stages affected -->

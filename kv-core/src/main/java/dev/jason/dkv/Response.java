@@ -1,3 +1,3 @@
 package dev.jason.dkv;
 
-public record Response(String value, String previousState) {}
+public sealed interface Response permits GetResponse, PutResponse, DeleteResponse {}

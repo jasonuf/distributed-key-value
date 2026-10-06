@@ -1,72 +1,64 @@
 package dev.jason.dkv;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.HashMap;
+import java.util.Map;
 
 public class KeyValueCore {
 
-  private ConcurrentMap<String, String> map;
+  private Map<String, String> map;
 
   public KeyValueCore() {
-    this.map = new ConcurrentHashMap<>();
+    this.map = new HashMap<>();
   }
 
-  public Response apply(Command command) throws IllegalArgumentException {
+  public Response apply(Command command) {
 
-    if (!Command.validateCommand(command)) {
-      throw new IllegalArgumentException(
-          "Your key value command is malformed, command=" + command.toString());
-    }
-
-    switch (command.type) {
-      case Command.CommandType.GET -> {
-        return applyGet(command);
+    switch (command) {
+      case GetCommand cmd -> {
+        return applyGet(cmd);
       }
-      case Command.CommandType.PUT -> {
-        return applyPut(command);
+      case PutCommand cmd -> {
+        return applyPut(cmd);
       }
-      case Command.CommandType.DELETE -> {
-        return applyDelete(command);
+      case DeleteCommand cmd -> {
+        return applyDelete(cmd);
       }
-      default ->
-          throw new IllegalArgumentException(
-              "Your key value command is malformed, command=\"+command.toString()");
     }
   }
 
-  private synchronized Response applyGet(Command command) {
-    String key = command.args[0];
+  private synchronized Response applyGet(GetCommand command) {
+    String key = command.key();
     if (!map.containsKey(key)) {
-      return new Response(null, null);
+      return new GetResponse(null, false);
     }
 
-    return new Response(map.get(key), null);
+    return new GetResponse(map.get(key), true);
   }
 
-  private synchronized Response applyPut(Command command) {
-    String key = command.args[0];
-    String value = command.args[1];
+  private synchronized Response applyPut(PutCommand command) {
+    String key = command.key();
+    String value = command.value();
 
     boolean present = map.containsKey(key);
 
     map.put(key, value);
     if (present) {
-      return new Response(null, "present");
+      return new PutResponse(true);
     } else {
-      return new Response(null, "missing");
+      return new PutResponse(false);
     }
   }
 
-  private synchronized Response applyDelete(Command command) {
-    String key = command.args[0];
+  private synchronized Response applyDelete(DeleteCommand command) {
+    String key = command.key();
 
     boolean present = map.containsKey(key);
 
     map.remove(key);
     if (present) {
-      return new Response(null, "present");
+      return new DeleteResponse(true);
     } else {
-      return new Response(null, "missing");
+      return new DeleteResponse(false);
     }
   }
 }
