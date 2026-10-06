@@ -12,4 +12,11 @@
 
   <artifactId>kv-server</artifactId>
   <description>HTTP API over the JDK HttpServer with virtual threads.</description>
+
+  <dependencies>
+    <dependency>
+      <groupId>dev.jason.dkv</groupId>
+      <artifactId>kv-core</artifactId>
+    </dependency>
+  </dependencies>
 </project>

@@ -1,16 +1,16 @@
 # dkv progress
 
-Current stage: 0
-Status: complete   <!-- not started | in progress | design gate | checking | complete -->
+Current stage: 1
+Status: in progress   <!-- not started | in progress | design gate | checking | complete -->
 
-## Stage 0 checklist
-- [x] Scaffolding given by mentor: parent + 7 module POMs, Maven Wrapper (Maven 3.9.16), Ratis ban via Enforcer, `@Stage`/`@Seeded` harness, CI workflow, Spotless (google-java-format)
-- [x] `./mvnw verify -Dstage=0` passes locally (verified 2026-09-29: 3 run, 1 skipped as intended)
-- [x] Experiment: add a Ratis dependency to `kv-core`, see the build fail, revert (efced55 failed CI at Verify via the Enforcer ban; reverted in 868288f)
-- [x] Experiment: add a deliberately failing `@Stage(0)` test, see it reported, remove it
-- [x] Repo pushed to GitHub; CI green (868288f passed on 2026-09-29)
-- [x] Reading: JEPs 395, 409, 441, 444
-- [x] Grill (2026-09-29): passed. Explained the consensus boundary as dependence on an owned interface so Stage 12 is a swap; identified transitive dependencies as the leak path the build must catch.
+## Stage 1 checklist
+- [x] Given by mentor: HTTP spec (`docs/http-api.md`), node launcher (`NodeProcess`, `KvClient`), acceptance tests (`Stage01CrudIT`, `Stage01ConcurrencyIT`, `Stage01DeterminismIT`)
+- 2026-10-05 mentor test fix: added `Stage01CrudIT.differentEncodingsOfTheSameKeyNameTheSameKey`; the original suite didn't check that keys are percent-decoded, as the spec requires
+- [ ] Reading: Raft paper §2; Schneider (1990) §1–3
+- [x] `dev.jason.dkv.server.Main` starts and serves `/kv/{key}` per the spec
+- [ ] `./mvnw verify -Dstage=1` passes locally and in CI (local: 21 run, 0 failed on 2026-10-05; CI pending, needs `spotless:apply`)
+- [ ] Guardrail review (commands as data, deterministic apply, submit-and-wait, reads expressible as commands). 2026-10-05 first pass: not yet met; state lives in the HTTP handler, no commands or `apply` in `kv-core`
+- [ ] Grill
 
 ## Completed stages
 <!-- stage, date, one-line summary -->
@@ -18,6 +18,7 @@ Status: complete   <!-- not started | in progress | design gate | checking | com
 
 ## Hints used
 <!-- stage | topic | tier -->
+- 1 | Separating commands and `apply` (kv-core) from HTTP handling (kv-server) | 1
 
 ## Decisions
 <!-- date | decision | reason | stages affected -->

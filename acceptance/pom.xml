@@ -19,8 +19,36 @@
     <maven.deploy.skip>true</maven.deploy.skip>
   </properties>
 
+  <dependencies>
+    <!-- Not called directly: tests start kv-server as a separate process (see NodeProcess).
+         Depending on it makes Maven build it first and puts it on the node classpath below. -->
+    <dependency>
+      <groupId>dev.jason.dkv</groupId>
+      <artifactId>kv-server</artifactId>
+    </dependency>
+  </dependencies>
+
   <build>
     <plugins>
+      <plugin>
+        <!-- Computes the classpath for starting a node (kv-server plus its runtime dependencies,
+             no test libraries) into the dkv.node.classpath property, passed to the tests below. -->
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>node-classpath</id>
+            <phase>pre-integration-test</phase>
+            <goals>
+              <goal>build-classpath</goal>
+            </goals>
+            <configuration>
+              <includeScope>runtime</includeScope>
+              <outputProperty>dkv.node.classpath</outputProperty>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
@@ -38,6 +66,7 @@
           <systemPropertyVariables>
             <stage>${stage}</stage>
             <seed>${seed}</seed>
+            <dkv.node.classpath>${dkv.node.classpath}</dkv.node.classpath>
           </systemPropertyVariables>
           <trimStackTrace>false</trimStackTrace>
         </configuration>
